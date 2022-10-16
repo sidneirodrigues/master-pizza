@@ -113,22 +113,33 @@ window.document.addEventListener('click', function(e){
     }
     else if(el.classList.contains('pizzaInfo--addButton')){
         //Qual a pizza?
-        console.log("pizza: "+modalKey)
+        // console.log("pizza: "+modalKey)
         //qual o tamanho?
-        let size = parseInt(selectElement('.pizzaInfo--size.selected').getAttribute('data-key'))
-        console.log("Tamanho: "+size)
+        let size = parseInt(selectElement('.pizzaInfo--size.selected').getAttribute('data-key'));
+        // console.log("Tamanho: "+size)
         //qual a quantidade
-        console.log("Quantidade: "+modalQtdPizza)
+        // console.log("Quantidade: "+modalQtdPizza);
 
-        cart.push({
-            id: pizzaJson[modalKey].id,
-            size:size,
-            qt: modalQtdPizza
+        let identifier = pizzaJson[modalKey].id+'@'+size;
+        let key = cart.findIndex((item)=>item.identifier == identifier);
+        if(key > -1){
+            cart[key].qt += modalQtdPizza;
 
-        })
+        } else{
+            cart.push({
+                identifier,
+                id: pizzaJson[modalKey].id,
+                size,
+                qt: modalQtdPizza
+            })
+        }
+     
 
-        console.log(cart)
+        // console.log(cart)
+        updateCart();
         closeModal();
+
+
     }   
 });
 
@@ -142,6 +153,70 @@ selectAll('.pizzaInfo--size').forEach((size)=> {
     })                             
 });
 
-console.log(navigator.appName)
-console.log(browser.name)
+function updateCart(){
+    if(cart.length != 0) {
+        selectElement('aside').classList.add('show');
+        selectElement('.cart').innerHTML = '';
+
+        let subtotal = 0;
+        let desconto = 0;
+        let total = 0;
+
+        for(let i in cart){
+            let pizzaItem = pizzaJson.find((item)=> item.id == cart[i].id);
+            subtotal += pizzaItem.price * cart[i].qt;
+
+
+            //mapeando o cart
+            let cartItem = selectElement('.models .cart--item').cloneNode(true);
+
+
+            let pizzaSizeName;
+            switch(cart[i].size){
+                case 0:
+                    pizzaSizeName = 'P'
+                    break;
+                case 1:
+                    pizzaSizeName = 'M'
+                    break;
+                case 2:
+                    pizzaSizeName = 'G'
+                    break    
+            };
+
+            let pizzaName = `${pizzaItem.name} (${pizzaSizeName})`
+
+            cartItem.querySelector('img').src = pizzaItem.img
+            cartItem.querySelector('.cart--item-nome').innerHTML = pizzaName;
+            cartItem.querySelector('.cart--item--qt').innerHTML = cart[i].qt;
+
+            cartItem.querySelector('.cart--item-qtmenos').addEventListener('click', ()=> {
+                if(cart[i].qt > 1){
+                    cart[i].qt--;
+                }else {
+                    cart.splice(i, 1);
+                }
+                updateCart();
+            });
+            cartItem.querySelector('.cart--item-qtmais').addEventListener('click', ()=> {
+                cart[i].qt++;
+                updateCart();
+            });
+
+            selectElement('.cart').append(cartItem)
+            // console.log(pizzaItem)
+        }
+
+        desconto = subtotal * 0.1;
+        total = subtotal - desconto;
+
+        selectElement('.subtotal span:last-child').innerHTML = `R$ ${subtotal.toFixed(2)}`;
+        selectElement('.desconto span:last-child').innerHTML = `R$ ${desconto.toFixed(2)}`;
+        selectElement('.total span:last-child').innerHTML = `R$ ${total.toFixed(2)}`;
+
+    } else {
+        selectElement('aside').classList.remove('show');
+    }
+}
+
 
